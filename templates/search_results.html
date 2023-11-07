@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resultados da Pesquisa</title>
+</head>
+<body>
+    <h1>Resultados da Pesquisa</h1>
+    <h2>Vídeos disponíveis para a data {{ date }}</h2>
+    <ul>
+        {% for video in videos %}
+            <li>
+                {{ video }} 
+                <a href="/download/{{ video }}">Baixar</a>
+                <br>
+                <video width="320" height="240" controls>
+                    <source src="/download/{{ video }}" type="video/mp4">
+                    Seu navegador não suporta a reprodução de vídeos.
+                </video>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
