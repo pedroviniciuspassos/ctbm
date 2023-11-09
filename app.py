@@ -2,14 +2,20 @@ from flask import Flask, render_template, request, send_file, redirect, url_for
 from flask_wtf import FlaskForm
 from wtforms import DateField
 from wtforms.validators import DataRequired
-import os
+import sqlite3
 from datetime import datetime
+import os
 
 app = Flask(__name__)
-app.secret_key = 'sua_chave_secreta'
+app.secret_key = os.urandom(24)
+
 
 # Pasta onde os vídeos estão armazenados
-video_folder = "videos"
+video_folder = "static/videos"
+
+# Função para conectar ao banco de dados
+def connect_to_database():
+    return sqlite3.connect('video_database.db')
 
 class SearchForm(FlaskForm):
     date = DateField('Selecione uma data (YYYY-MM-DD)', validators=[DataRequired()])
@@ -27,15 +33,21 @@ def search(date):
     try:
         selected_date = datetime.strptime(date, "%Y-%m-%d")
         videos = []
-        for filename in os.listdir(video_folder):
-            if filename.startswith("Replay") and filename.endswith(".mp4"):
-                video_date_str = filename[7:17]
-                video_date = datetime.strptime(video_date_str, "%Y-%m-%d")
-                if video_date.date() == selected_date.date():
-                    videos.append(filename)
+
+        conn = connect_to_database()
+        cursor = conn.cursor()
+        cursor.execute("SELECT nome_arquivo, caminho_arquivo FROM videos WHERE nome_arquivo LIKE ?", ('%' + date + '%',))
+        rows = cursor.fetchall()
+        conn.close()
+
+        for row in rows:
+            video_filename, video_path = row
+            videos.append((video_filename, video_path))
+
         return render_template('search_results.html', videos=videos, date=date)
     except ValueError:
         return render_template('index.html', error="Data inválida. Use o formato YYYY-MM-DD.")
+
 
 @app.route('/download/<video_name>')
 def download(video_name):
